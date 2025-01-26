@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
+// Represents a medical appointment between a patient and a doctor
 @Data
 @Setter
 @Getter
@@ -15,15 +16,23 @@ import java.time.LocalDateTime;
 public class Appointment {
 	@Id
 	private String id;
-	private String userId;
-	private String doctorId;
+	private String userId;      // Patient's ID
+	private String doctorId;    // Doctor's ID
 	private String doctorName;
 	private String doctorSpecialty;
 	private LocalDateTime appointmentTime;
 
-	private AppointmentStatus status; // No @Enumerated annotation
+	private AppointmentStatus status; 
 
+	// Appointment status with user-friendly string representation
 	public enum AppointmentStatus {
-		SCHEDULED, CANCELED, COMPLETED
+		SCHEDULED,   // Initial state when appointment is booked
+		CANCELED,    // When either party cancels
+		COMPLETED;   // After appointment is done
+
+		@Override
+		public String toString() {
+			return this.name().toLowerCase();
+		}
 	}
 }

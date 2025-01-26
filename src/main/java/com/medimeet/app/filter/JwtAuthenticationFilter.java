@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+// Handles JWT authentication for all protected API endpoints
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
@@ -38,18 +39,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         try {
+            // Get JWT from Authorization header
             String jwt = getJwtFromRequest(request);
 
+            // Validate token and set up authentication
             if (StringUtils.hasText(jwt) && tokenProvider.validateAccessToken(jwt)) {
                 logger.debug("Processing JWT token for request: {}", request.getRequestURI());
                 String userId = tokenProvider.getUserIdFromToken(jwt, true);
 
                 UserDetails userDetails = userDetailsService.loadUserById(userId);
+                
+                // Create authentication token and set in security context
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 logger.debug("Successfully set authentication for user: {}", userId);
             }

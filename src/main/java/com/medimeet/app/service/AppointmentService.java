@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service class for managing appointments.
+ */
 @Service
 public class AppointmentService {
     private static final Logger logger = LoggerFactory.getLogger(AppointmentService.class);
@@ -33,6 +36,7 @@ public class AppointmentService {
     @Autowired
     private UserRepository userRepository;
 
+    // Find a user by ID, throwing an exception if not found
     private User findUserById(String userId) {
         return userRepository.findById(userId)
             .orElseThrow(() -> {
@@ -41,6 +45,7 @@ public class AppointmentService {
             });
     }
 
+    // Validate user access by checking authentication and user ID
     private void validateUserAccess(String userId) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserPrincipal) {
@@ -63,17 +68,26 @@ public class AppointmentService {
         }
     }
 
+    /**
+     * Schedule a new appointment after validating user and doctor.
+     * 
+     * @param userId User ID of the patient
+     * @param doctorId ID of the doctor
+     * @param time Appointment time
+     * @return The scheduled appointment
+     */
     public Appointment scheduleAppointment(String userId, String doctorId, LocalDateTime time) {
-        // First validate user exists and has access
-        User user = findUserById(userId);
+        // Verify user exists and has access
         validateUserAccess(userId);
+        User user = findUserById(userId);
         
         logger.info("Scheduling appointment for user: {} with doctor: {}", userId, doctorId);
         
-        // Verify doctor exists
+        // Find and verify doctor exists
         Doctor doctor = doctorRepository.findById(doctorId)
             .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
         
+        // Create and save the appointment
         Appointment appointment = new Appointment();
         appointment.setUserId(userId);
         appointment.setDoctorId(doctorId);
@@ -88,53 +102,42 @@ public class AppointmentService {
         return savedAppointment;
     }
 
-    public List<Appointment> getUserAppointments(String userId) {
-        // First validate user exists and has access
-        User user = findUserById(userId);
-        validateUserAccess(userId);
-        
-        logger.info("Fetching appointments for user: {}", userId);
-        
-        // Get appointments sorted by time
-        List<Appointment> appointments = appointmentRepository.findByUserIdOrderByAppointmentTimeDesc(userId);
-        
-        // Fetch and set doctor details for each appointment
-        appointments = appointments.stream()
-            .map(appointment -> {
-                Doctor doctor = doctorRepository.findById(appointment.getDoctorId())
-                    .orElse(null);
-                if (doctor != null) {
-                    appointment.setDoctorName(doctor.getName());
-                    appointment.setDoctorSpecialty(doctor.getSpecialty());
-                }
-                return appointment;
-            })
-            .collect(Collectors.toList());
-            
-        logger.debug("Found {} appointments for user: {}", appointments.size(), userId);
-        return appointments;
-    }
-
+    /**
+     * Get upcoming appointments for a user.
+     * 
+     * @param userId User ID of the patient
+     * @return List of upcoming appointments
+     */
     public List<Appointment> getUpcomingAppointments(String userId) {
         validateUserAccess(userId);
         logger.info("Fetching upcoming appointments for user: {}", userId);
         
         return appointmentRepository.findByUserIdAndAppointmentTimeGreaterThanEqual(
-            userId,
-            LocalDateTime.now()
+            userId, LocalDateTime.now()
         );
     }
 
+    /**
+     * Get past appointments for a user.
+     * 
+     * @param userId User ID of the patient
+     * @return List of past appointments
+     */
     public List<Appointment> getPastAppointments(String userId) {
         validateUserAccess(userId);
         logger.info("Fetching past appointments for user: {}", userId);
         
         return appointmentRepository.findByUserIdAndAppointmentTimeLessThan(
-            userId,
-            LocalDateTime.now()
+            userId, LocalDateTime.now()
         );
     }
 
+    /**
+     * Cancel an existing appointment.
+     * 
+     * @param appointmentId ID of the appointment to cancel
+     * @return The cancelled appointment
+     */
     public Appointment cancelAppointment(String appointmentId) {
         logger.info("Cancelling appointment: {}", appointmentId);
         
@@ -153,5 +156,51 @@ public class AppointmentService {
         logger.info("Successfully cancelled appointment: {}", appointmentId);
         
         return cancelledAppointment;
+    }
+
+    /**
+     * Get appointment details by ID.
+     * 
+     * @param appointmentId ID of the appointment
+     * @return The appointment details
+     */
+    public Appointment getAppointment(String appointmentId) {
+        logger.info("Fetching appointment details for ID: {}", appointmentId);
+        
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> {
+                    logger.error("Appointment not found with ID: {}", appointmentId);
+                    return new ResourceNotFoundException("Appointment not found");
+                });
+
+        // Validate user exists and has access
+        validateUserAccess(appointment.getUserId());
+        
+        // Fetch and set doctor details
+        Doctor doctor = doctorRepository.findById(appointment.getDoctorId())
+                .orElse(null);
+        if (doctor != null) {
+            appointment.setDoctorName(doctor.getName());
+            appointment.setDoctorSpecialty(doctor.getSpecialty());
+        }
+        
+        logger.info("Successfully fetched appointment details for ID: {}", appointmentId);
+        return appointment;
+    }
+
+    /**
+     * Get all appointments for a user.
+     * 
+     * @param userId User ID of the patient
+     * @return List of appointments
+     */
+    public List<Appointment> getUserAppointments(String userId) {
+        // First validate user exists and has access
+        User user = findUserById(userId);
+        validateUserAccess(userId);
+        
+        logger.info("Fetching appointments for user: {}", userId);
+        
+        return appointmentRepository.findByUserIdOrderByAppointmentTimeDesc(userId);
     }
 }

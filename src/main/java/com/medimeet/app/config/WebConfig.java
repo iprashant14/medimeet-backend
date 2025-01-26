@@ -9,33 +9,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins(
-                    "http://localhost:5000",
-                    "http://localhost:3000",
-                    "http://localhost:8080",
-                    "http://localhost:57979",
-                    "http://localhost:*"
-                )
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:5000")  // Frontend runs on port 5000
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")
-                .allowedHeaders(
-                    "Authorization",
-                    "Content-Type",
-                    "Accept",
-                    "Origin",
-                    "X-Requested-With",
-                    "Access-Control-Request-Method",
-                    "Access-Control-Request-Headers",
-                    "Access-Control-Allow-Origin",
-                    "Access-Control-Allow-Credentials",
-                    "Access-Control-Allow-Headers"
-                )
+                .allowedHeaders("*")
                 .exposedHeaders(
                     "Access-Control-Allow-Origin",
                     "Access-Control-Allow-Credentials",
-                    "Access-Control-Allow-Headers",
-                    "Authorization",
-                    "Content-Disposition"
+                    "Authorization"
                 )
                 .allowCredentials(true)
                 .maxAge(3600);

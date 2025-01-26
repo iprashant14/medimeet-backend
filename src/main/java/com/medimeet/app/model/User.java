@@ -28,4 +28,29 @@ public class User {
 	@Email(message = "Invalid email format")
 	@NotBlank(message = "Email is required")
 	private String email;
+
+	private String role;
+	private AuthProvider authProvider = AuthProvider.LOCAL;
+	private String providerId;
+
+	public enum AuthProvider {
+		LOCAL,
+		GOOGLE
+	}
+
+	public AuthProvider getAuthProvider() {
+		return authProvider;
+	}
+
+	public void setAuthProvider(AuthProvider authProvider) {
+		this.authProvider = authProvider;
+	}
+
+	public String getProviderId() {
+		return providerId;
+	}
+
+	public void setProviderId(String providerId) {
+		this.providerId = providerId;
+	}
 }

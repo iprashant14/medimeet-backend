@@ -19,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -49,19 +50,15 @@ public class SecurityConfig {
                     cors.configurationSource(corsConfigurationSource());
                 })
                 .csrf(csrf -> {
-                    logger.debug("Disabling CSRF");
                     csrf.disable();
                 })
-                .sessionManagement(session -> {
-                    logger.debug("Setting session management to STATELESS");
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-                })
+                .sessionManagement(session -> 
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> {
-                    logger.debug("Configuring HTTP request authorization");
-                    auth.requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
-                        .requestMatchers("/api/appointments", "/api/appointments/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/doctors/**").authenticated()
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                    auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  
                         .anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -70,36 +67,14 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        logger.info("Configuring CORS configuration source");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5000", 
-            "http://localhost:3000",
-            "http://localhost:8080",
-            "http://localhost:57979",  // Flutter's default debug port
-            "http://localhost:*"       // Allow any localhost port for development
-        ));
-        configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
-        ));
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", 
-            "Content-Type", 
-            "Accept", 
-            "Origin",
-            "X-Requested-With",
-            "Access-Control-Request-Method", 
-            "Access-Control-Request-Headers", 
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials",
-            "Access-Control-Allow-Headers"
-        ));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5000"));  // Frontend runs on port 5000
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList(
-            "Access-Control-Allow-Origin", 
-            "Access-Control-Allow-Credentials",
-            "Access-Control-Allow-Headers", 
             "Authorization",
-            "Content-Disposition"
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
         ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
