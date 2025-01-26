@@ -9,133 +9,116 @@
 - **Build Tool**: Gradle
 - **Java Version**: 17
 - **API Documentation**: SpringDoc OpenAPI 2.0.2
+- **OAuth2**: Google Sign-In Integration
+
+### Environment Configuration
+The application uses environment variables for sensitive configuration:
+```properties
+# Required Environment Variables
+MONGODB_URI=mongodb://localhost:27017/medimeet
+JWT_SECRET=<secure-random-value>
+GOOGLE_CLIENT_ID=<your-google-client-id>
+```
 
 ### Core Services
 1. **Authentication Service** (`AuthService`)
-   - User registration
-   - User login
+   - Google Sign-In integration
    - JWT token management
-   - Token refresh
+   - User authentication
+   - Logout handling
 
 2. **Doctor Service** (`DoctorService`)
-   - Doctor profile management
    - Doctor listing and search
+   - Doctor details retrieval
 
 3. **Appointment Service** (`AppointmentService`)
    - Appointment booking
-   - Appointment management
+   - Appointment retrieval
+   - Status tracking (SCHEDULED, CANCELED)
 
 4. **User Details Service** (`CustomUserDetailsService`)
    - User authentication
    - User details management
 
+### Exception Handling
+The application implements a global exception handling strategy:
+
+1. **Authentication Exceptions**
+   - `UnauthorizedException`: Invalid credentials or token
+   - `GoogleAuthException`: Google authentication failed
+
+2. **Business Logic Exceptions**
+   - `ResourceNotFoundException`: Requested resource not found
+   - `AppointmentException`: Appointment-related errors
+
+3. **Response Format**
+```json
+{
+    "status": "ERROR",
+    "message": "Detailed error message",
+    "timestamp": "2025-01-26T22:31:55+05:30"
+}
+```
+
 ### API Endpoints
 
 #### Authentication
 ```
-POST /api/auth/register    # User registration
-POST /api/auth/login       # User login
-POST /api/auth/refresh     # Refresh token
+POST /api/auth/google            # Google Sign-In
+POST /api/auth/logout            # Logout user
 ```
 
 #### Doctors
 ```
-GET    /api/doctors        # List all doctors
-GET    /api/doctors/{id}   # Get doctor details
-POST   /api/doctors        # Add new doctor
+GET    /api/doctors              # List all doctors
+GET    /api/doctors/{id}         # Get doctor details
 ```
 
 #### Appointments
 ```
-POST   /api/appointments           # Book appointment
-GET    /api/appointments/{userId}  # Get user appointments
-PUT    /api/appointments/{id}      # Update appointment
-DELETE /api/appointments/{id}      # Cancel appointment
+POST   /api/appointments        # Book appointment
+GET    /api/appointments/user/{userId}  # Get user appointments
+GET    /api/appointments/upcoming       # Get upcoming appointments
+PUT    /api/appointments/{id}/cancel    # Cancel appointment
+GET    /api/appointments/{id}           # Get appointment details
 ```
+
+### Security Implementation
+
+1. **JWT Authentication**
+   - Access token with configurable validity
+   - Stateless authentication
+   - Token invalidation on logout
+
+2. **Google OAuth2**
+   - Client-side token generation
+   - Server-side token verification
+   - User profile management
+
+### Error Types
+- Authentication errors (invalid token, Google auth failure)
+- Resource not found errors
+- Appointment booking errors
+- General validation errors
+
+### Testing
+- Unit tests for services
+- API endpoint tests
 
 ## Future Implementations
 
-### Caching Strategy
-1. **Planned Implementation**
-   - Redis for distributed caching
-   - Cache for doctor listings
-   - Cache for user sessions
-   - Cache for frequently accessed data
-
-2. **Caching Policies**
-   - Time-based expiration
-   - LRU eviction policy
-   - Cache invalidation on updates
-
-### Kubernetes Deployment
-1. **Helm Charts Structure**
-   ```
-   medimeet/
-   ├── Chart.yaml
-   ├── values.yaml
-   ├── templates/
-   │   ├── deployment.yaml
-   │   ├── service.yaml
-   │   ├── ingress.yaml
-   │   └── configmap.yaml
-   ```
-
-2. **Pod Configuration**
-   - Resource limits and requests
-   - Health checks
-   - Rolling updates
-   - Auto-scaling policies
-
-3. **Scaling Strategy**
-   - Horizontal Pod Autoscaling (HPA)
-   - Custom metrics scaling
-   - Load balancing configuration
-
-### API Gateway (To be implemented)
-1. **Features**
+### Planned Features
+1. **Enhanced Security**
+   - Refresh token mechanism
    - Rate limiting
-   - Request routing
-   - Authentication/Authorization
-   - Request/Response transformation
-   - Circuit breaking
-   - API versioning
+   - Advanced error tracking
 
-2. **Technologies to Consider**
-   - Spring Cloud Gateway
-   - Kong
-   - Nginx Ingress Controller
+2. **Monitoring**
+   - Performance metrics
+   - Error logging
+   - User activity tracking
 
-### Monitoring and Logging
-1. **Metrics**
-   - Prometheus integration
-   - Grafana dashboards
-   - Custom metrics for business KPIs
-
-2. **Logging**
-   - ELK Stack integration
-   - Structured logging
-   - Log aggregation
-
-### Testing Strategy (To be implemented)
-1. **Unit Tests**
-   - Service layer
-   - Repository layer
-   - Security components
-
-2. **Integration Tests**
-   - API endpoints
-   - Database operations
-   - Authentication flows
-
-3. **Performance Tests**
-   - Load testing
-   - Stress testing
-   - Endurance testing
-
-### Security Enhancements
-1. **Planned Features**
-   - Rate limiting
-   - IP whitelisting
-   - OAuth2 integration
-   - Role-based access control (RBAC)
-   - API key management
+3. **API Enhancements**
+   - Pagination for listings
+   - Advanced search filters
+   - Real-time updates

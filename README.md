@@ -27,61 +27,59 @@ Spring Boot-based backend service for the MediMeet medical appointment booking a
 - Gradle 7.x+ or compatible version
 - Git
 
-## Getting Started
+## Local Development Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/iprashant14/medimeet-backend.git
-   cd medimeet-backend
-   ```
-
-2. **Configure MongoDB**
-   - Install MongoDB if not already installed
-   - Create a database named 'medimeet'
-   - Update application.properties with your MongoDB URI
-
-3. **Configure Application Properties**
-   Create `src/main/resources/application.properties`:
-   ```properties
-   # MongoDB Configuration
-   spring.data.mongodb.uri=mongodb://localhost:27017/medimeet
-   
-   # JWT Configuration
-   jwt.secret=your-secret-key
-   jwt.expiration=86400000
-   
-   # Server Configuration
-   server.port=8080
-   
-   # Swagger UI path
-   springdoc.swagger-ui.path=/swagger-ui.html
-   ```
-
-4. **Build and Run**
-   ```bash
-   # Build the project
-   ./gradlew build
-   
-   # Run the application
-   ./gradlew bootRun
-   ```
-
-## Project Structure
-
-```
-src/main/java/com/medimeet/app/
-├── config/         # Configuration classes
-├── controller/     # REST controllers
-├── dto/           # Data Transfer Objects
-├── exception/     # Custom exceptions
-├── filter/        # JWT and security filters
-├── model/         # MongoDB entities
-├── repository/    # MongoDB repositories
-├── security/      # Security configurations
-└── service/       # Business logic
+1. **Clone the Repository**
+```bash
+git clone https://github.com/iprashant14/medimeet-backend.git
+cd medimeet-backend
 ```
 
-## API Endpoints
+2. **Configure Environment Variables**
+
+Create `application-dev.properties` in `src/main/resources/`:
+```properties
+# MongoDB Configuration
+spring.data.mongodb.uri=${MONGODB_URI}
+
+# JWT Configuration
+jwt.secret=${JWT_SECRET}
+
+# Server Configuration
+server.port=8080
+```
+
+3. **Create `.env` file**
+```properties
+# Required Environment Variables
+MONGODB_URI=mongodb://localhost:27017/medimeet
+JWT_SECRET=your-secure-jwt-secret
+```
+
+4. **Start MongoDB**
+```bash
+# Start MongoDB locally
+mongod --dbpath /path/to/data/directory
+```
+
+5. **Build and Run**
+```bash
+# Build the project
+./gradlew build
+
+# Run in development mode
+./gradlew bootRun --args='--spring.profiles.active=dev'
+```
+
+The application will start on `http://localhost:8080`
+
+## API Documentation
+
+Once the application is running, access the API documentation at:
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+## Available Endpoints
 
 ### Authentication
 ```
