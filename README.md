@@ -2,6 +2,15 @@
 
 Spring Boot-based backend service for the MediMeet medical appointment booking application.
 
+## Technology Stack
+
+- **Framework**: Spring Boot 3.1.4
+- **Database**: MongoDB
+- **Security**: Spring Security with JWT (jjwt 0.11.5)
+- **Build Tool**: Gradle
+- **Java Version**: 17
+- **API Documentation**: SpringDoc OpenAPI 2.0.2
+
 ## Features
 
 - **JWT Authentication**: Secure user authentication and authorization
@@ -9,12 +18,13 @@ Spring Boot-based backend service for the MediMeet medical appointment booking a
 - **RESTful APIs**: Well-structured APIs for appointment management
 - **Doctor Management**: APIs for managing doctor profiles and availability
 - **Appointment System**: Complete appointment booking and management system
+- **OpenAPI Documentation**: Interactive API documentation with Swagger UI
 
 ## Prerequisites
 
-- Java 11 or higher
+- Java 17 or higher
 - MongoDB 4.4 or higher
-- Maven 3.6 or higher
+- Gradle 7.x+ or compatible version
 - Git
 
 ## Getting Started
@@ -42,16 +52,18 @@ Spring Boot-based backend service for the MediMeet medical appointment booking a
    
    # Server Configuration
    server.port=8080
+   
+   # Swagger UI path
+   springdoc.swagger-ui.path=/swagger-ui.html
    ```
 
-4. **Build the project**
+4. **Build and Run**
    ```bash
-   mvn clean install
-   ```
-
-5. **Run the application**
-   ```bash
-   mvn spring-boot:run
+   # Build the project
+   ./gradlew build
+   
+   # Run the application
+   ./gradlew bootRun
    ```
 
 ## Project Structure
@@ -73,76 +85,73 @@ src/main/java/com/medimeet/app/
 
 ### Authentication
 ```
-POST /api/auth/login         # Login user
-POST /api/auth/register      # Register new user
+POST /api/auth/register    # User registration
+POST /api/auth/login       # User login
+POST /api/auth/refresh     # Refresh token
 ```
 
 ### Doctors
 ```
-GET    /api/doctors          # Get all doctors
-GET    /api/doctors/{id}     # Get doctor by ID
-POST   /api/doctors         # Add new doctor
+GET    /api/doctors        # List all doctors
+GET    /api/doctors/{id}   # Get doctor details
+POST   /api/doctors        # Add new doctor
 ```
 
 ### Appointments
 ```
-POST   /api/appointments           # Create appointment
+POST   /api/appointments           # Book appointment
 GET    /api/appointments/{userId}  # Get user appointments
 PUT    /api/appointments/{id}      # Update appointment
 DELETE /api/appointments/{id}      # Cancel appointment
 ```
 
-## Database Schema
+## Error Handling
 
-### Doctor Collection
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  specialty: String,
-  availableSlots: [DateTime]
-}
-```
+The application currently implements basic error handling:
+- Resource not found errors via `ResourceNotFoundException`
 
-### Appointment Collection
-```javascript
-{
-  _id: ObjectId,
-  userId: String,
-  doctorId: String,
-  doctorName: String,
-  doctorSpecialty: String,
-  appointmentTime: DateTime,
-  status: String (SCHEDULED/CANCELED/COMPLETED)
-}
-```
+TODO: Implement comprehensive error handling:
+- [ ] Add global exception handler using `@ControllerAdvice`
+- [ ] Add validation error handling
+- [ ] Add authentication error handling
+- [ ] Add database operation error handling
+- [ ] Add generic server error handling
 
-## Development
+## Testing Status
 
-### Running Tests
-```bash
-# Run all tests
-mvn test
+The application currently has minimal test coverage:
+- Basic context loading test (`AppApplicationTests`)
 
-# Run with coverage
-mvn verify
-```
+TODO: Implement comprehensive testing:
+- [ ] Unit tests for services and repositories
+- [ ] Integration tests for API endpoints
+- [ ] Security tests for authentication
+- [ ] Performance and load testing
 
-### API Documentation
-- Swagger UI available at: `http://localhost:8080/swagger-ui.html`
-- API Docs at: `http://localhost:8080/v2/api-docs`
+## Future Enhancements
 
-## Deployment
+### Caching Implementation
+- [ ] Redis integration for distributed caching
+- [ ] Cache for frequently accessed data
+- [ ] Cache invalidation strategy
 
-1. **Build JAR file**
-   ```bash
-   mvn clean package
-   ```
+### Kubernetes Deployment
+- [ ] Helm charts for deployment
+- [ ] Container configuration
+- [ ] Resource management
+- [ ] Auto-scaling setup
 
-2. **Run JAR file**
-   ```bash
-   java -jar target/medimeet-backend-1.0.0.jar
-   ```
+### API Gateway
+- [ ] Request routing
+- [ ] Rate limiting
+- [ ] Load balancing
+- [ ] Security policies
+
+### Monitoring
+- [ ] Prometheus metrics
+- [ ] Grafana dashboards
+- [ ] ELK stack for logging
+- [ ] Health checks
 
 ## Contributing
 
@@ -151,20 +160,3 @@ mvn verify
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## Troubleshooting
-
-Common issues and their solutions:
-
-1. **MongoDB Connection Issues**
-   - Verify MongoDB is running: `mongosh`
-   - Check connection string in application.properties
-   - Ensure MongoDB service is started
-
-2. **Build Issues**
-   - Clean and rebuild: `mvn clean install`
-   - Update Maven dependencies: `mvn dependency:resolve`
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details

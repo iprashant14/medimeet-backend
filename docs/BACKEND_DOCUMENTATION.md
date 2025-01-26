@@ -1,361 +1,141 @@
 # MediMeet Backend Documentation
 
-## High-Level Design (HLD)
+## Current Implementation
 
-### System Overview
-MediMeet backend is a Spring Boot-based application that provides RESTful APIs for the medical appointment booking system. It uses MongoDB for data storage and JWT for authentication.
-
-### Architecture
-- **Framework**: Spring Boot
+### Technology Stack
+- **Framework**: Spring Boot 3.1.4
 - **Database**: MongoDB
-- **Security**: Spring Security with JWT
-- **API Documentation**: Swagger/OpenAPI
-- **Build Tool**: Maven
+- **Security**: Spring Security with JWT (jjwt 0.11.5)
+- **Build Tool**: Gradle
+- **Java Version**: 17
+- **API Documentation**: SpringDoc OpenAPI 2.0.2
 
-### Key Components
-1. **Authentication System**
-   - JWT-based authentication
-   - Role-based access control
-   - Token management
+### Core Services
+1. **Authentication Service** (`AuthService`)
+   - User registration
+   - User login
+   - JWT token management
+   - Token refresh
 
-2. **Appointment Management**
-   - Scheduling system
-   - Status tracking (SCHEDULED/CANCELED/COMPLETED)
-   - Doctor availability management
+2. **Doctor Service** (`DoctorService`)
+   - Doctor profile management
+   - Doctor listing and search
 
-3. **Doctor Management**
-   - Doctor profiles
-   - Available time slots
-   - Specialization categories
+3. **Appointment Service** (`AppointmentService`)
+   - Appointment booking
+   - Appointment management
 
-4. **User Management**
-   - User profiles
-   - Role management
-   - Access control
+4. **User Details Service** (`CustomUserDetailsService`)
+   - User authentication
+   - User details management
 
-### System Design
+### API Endpoints
+
+#### Authentication
 ```
-[Client Apps] ←→ [Spring Security Filter] ←→ [REST Controllers]
-                                            ↓
-[JWT Authentication] ←→ [Services] ←→ [MongoDB Repositories]
-                                            ↓
-                                      [MongoDB Database]
-```
-
-## Low-Level Design (LLD)
-
-### Directory Structure
-```
-src/main/java/com/medimeet/app/
-├── config/
-│   ├── SecurityConfig.java
-│   └── SwaggerConfig.java
-├── controller/
-│   ├── AppointmentController.java
-│   └── DoctorController.java
-├── dto/
-│   ├── AppointmentRequest.java
-│   └── DoctorResponse.java
-├── exception/
-│   └── CustomExceptionHandler.java
-├── filter/
-│   └── JwtAuthenticationFilter.java
-├── model/
-│   ├── Appointment.java
-│   └── Doctor.java
-├── repository/
-│   ├── AppointmentRepository.java
-│   └── DoctorRepository.java
-├── security/
-│   └── JwtTokenProvider.java
-└── service/
-    ├── AppointmentService.java
-    └── DoctorService.java
+POST /api/auth/register    # User registration
+POST /api/auth/login       # User login
+POST /api/auth/refresh     # Refresh token
 ```
 
-### Component Details
-
-#### 1. Models
-```java
-@Document(collection = "doctors")
-public class Doctor {
-    @Id
-    private String id;
-    private String name;
-    private String specialty;
-    private List<LocalDateTime> availableSlots;
-}
-
-@Document(collection = "appointments")
-public class Appointment {
-    @Id
-    private String id;
-    private String userId;
-    private String doctorId;
-    private String doctorName;
-    private String doctorSpecialty;
-    private LocalDateTime appointmentTime;
-    private AppointmentStatus status;
-
-    public enum AppointmentStatus {
-        SCHEDULED, CANCELED, COMPLETED
-    }
-}
+#### Doctors
+```
+GET    /api/doctors        # List all doctors
+GET    /api/doctors/{id}   # Get doctor details
+POST   /api/doctors        # Add new doctor
 ```
 
-#### 2. Repositories
-```java
-@Repository
-public interface DoctorRepository extends MongoRepository<Doctor, String> {
-    List<Doctor> findBySpecialty(String specialty);
-}
-
-@Repository
-public interface AppointmentRepository extends MongoRepository<Appointment, String> {
-    List<Appointment> findByUserId(String userId);
-    List<Appointment> findByDoctorId(String doctorId);
-}
+#### Appointments
+```
+POST   /api/appointments           # Book appointment
+GET    /api/appointments/{userId}  # Get user appointments
+PUT    /api/appointments/{id}      # Update appointment
+DELETE /api/appointments/{id}      # Cancel appointment
 ```
 
-#### 3. Services
-```java
-@Service
-public class AppointmentService {
-    public Appointment createAppointment(AppointmentRequest request);
-    public List<Appointment> getUserAppointments(String userId);
-    public void cancelAppointment(String appointmentId);
-    public boolean isTimeSlotAvailable(String doctorId, LocalDateTime time);
-}
+## Future Implementations
 
-@Service
-public class DoctorService {
-    public List<Doctor> getAllDoctors();
-    public Doctor getDoctorById(String id);
-    public List<Doctor> getDoctorsBySpecialty(String specialty);
-}
-```
+### Caching Strategy
+1. **Planned Implementation**
+   - Redis for distributed caching
+   - Cache for doctor listings
+   - Cache for user sessions
+   - Cache for frequently accessed data
 
-### Security Implementation
+2. **Caching Policies**
+   - Time-based expiration
+   - LRU eviction policy
+   - Cache invalidation on updates
 
-#### JWT Configuration
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable()
-            .authorizeRequests()
-            .antMatchers("/api/auth/**").permitAll()
-            .anyRequest().authenticated()
-            .and()
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-    }
-}
-```
+### Kubernetes Deployment
+1. **Helm Charts Structure**
+   ```
+   medimeet/
+   ├── Chart.yaml
+   ├── values.yaml
+   ├── templates/
+   │   ├── deployment.yaml
+   │   ├── service.yaml
+   │   ├── ingress.yaml
+   │   └── configmap.yaml
+   ```
 
-## Database Design
+2. **Pod Configuration**
+   - Resource limits and requests
+   - Health checks
+   - Rolling updates
+   - Auto-scaling policies
 
-### MongoDB Collections
+3. **Scaling Strategy**
+   - Horizontal Pod Autoscaling (HPA)
+   - Custom metrics scaling
+   - Load balancing configuration
 
-#### doctors
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  specialty: String,
-  availableSlots: [DateTime]
-}
-```
-
-#### appointments
-```javascript
-{
-  _id: ObjectId,
-  userId: String,
-  doctorId: String,
-  doctorName: String,
-  doctorSpecialty: String,
-  appointmentTime: DateTime,
-  status: String
-}
-```
-
-### Indexes
-```javascript
-// appointments collection
-db.appointments.createIndex({ "userId": 1 });
-db.appointments.createIndex({ "doctorId": 1 });
-db.appointments.createIndex({ "appointmentTime": 1 });
-
-// doctors collection
-db.doctors.createIndex({ "specialty": 1 });
-```
-
-## API Documentation
-
-### Authentication
-```
-POST /api/auth/login
-POST /api/auth/register
-```
-
-### Appointments
-```
-POST /api/appointments
-GET /api/appointments/user/{userId}
-PUT /api/appointments/{id}/cancel
-```
-
-### Doctors
-```
-GET /api/doctors
-GET /api/doctors/{id}
-GET /api/doctors/specialty/{specialty}
-```
-
-## Error Handling
-
-### Custom Exceptions
-```java
-public class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String message) {
-        super(message);
-    }
-}
-```
-
-The application uses a simple exception handling mechanism with a custom `ResourceNotFoundException` for handling cases where requested resources are not found in the database. This exception is thrown and handled at the service layer.
-
-### Service Layer Error Handling
-```java
-@Service
-public class AppointmentService {
-    public Appointment getAppointment(String id) {
-        return appointmentRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
-    }
-}
-```
-
-### Controller Layer Error Handling
-The controllers handle exceptions using try-catch blocks and return appropriate HTTP status codes:
-- 404 for ResourceNotFoundException
-- 400 for invalid requests
-- 500 for internal server errors
-
-## Testing Strategy
-
-### Unit Tests
-```java
-@SpringBootTest
-public class AppointmentServiceTest {
-    @Test
-    public void testCreateAppointment() {
-        // Test appointment creation
-    }
-    
-    @Test
-    public void testCancelAppointment() {
-        // Test appointment cancellation
-    }
-}
-```
-
-### Integration Tests
-```java
-@SpringBootTest
-@AutoConfigureMockMvc
-public class AppointmentControllerTest {
-    @Test
-    public void testCreateAppointmentEndpoint() {
-        // Test API endpoint
-    }
-}
-```
-
-## Performance Optimization
-
-### Caching
-```java
-@Configuration
-@EnableCaching
-public class CacheConfig {
-    @Bean
-    public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("doctors");
-    }
-}
-```
-
-### MongoDB Optimization
-- Proper indexing on frequently queried fields
-- Pagination for large result sets
-- Efficient query patterns
-
-## Deployment
-
-### Environment Configuration
-```properties
-# application.properties
-spring.data.mongodb.uri=${MONGODB_URI}
-jwt.secret=${JWT_SECRET}
-jwt.expiration=86400000
-```
-
-### Docker Configuration
-```dockerfile
-FROM openjdk:11-jdk-slim
-COPY target/*.jar app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
-```
-
-## Monitoring and Logging
-
-### Actuator Endpoints
-```properties
-management.endpoints.web.exposure.include=health,metrics,info
-management.endpoint.health.show-details=always
-```
-
-### Logging Configuration
-```xml
-<logger name="com.medimeet" level="INFO">
-    <appender-ref ref="CONSOLE"/>
-    <appender-ref ref="FILE"/>
-</logger>
-```
-
-## Security Considerations
-
-1. **Authentication**
-   - JWT token validation
-   - Password hashing
-   - Role-based access
-
-2. **Data Protection**
-   - Input validation
-   - NoSQL injection prevention
-   - XSS protection
-
-3. **API Security**
+### API Gateway (To be implemented)
+1. **Features**
    - Rate limiting
-   - CORS configuration
-   - Request validation
+   - Request routing
+   - Authentication/Authorization
+   - Request/Response transformation
+   - Circuit breaking
+   - API versioning
 
-## Scalability Considerations
+2. **Technologies to Consider**
+   - Spring Cloud Gateway
+   - Kong
+   - Nginx Ingress Controller
 
-1. **Database**
-   - MongoDB replication
-   - Sharding strategy
-   - Index optimization
+### Monitoring and Logging
+1. **Metrics**
+   - Prometheus integration
+   - Grafana dashboards
+   - Custom metrics for business KPIs
 
-2. **Application**
-   - Stateless design
-   - Caching strategy
-   - Async processing
+2. **Logging**
+   - ELK Stack integration
+   - Structured logging
+   - Log aggregation
 
-3. **Infrastructure**
-   - Load balancing
-   - Auto-scaling
-   - Containerization
+### Testing Strategy (To be implemented)
+1. **Unit Tests**
+   - Service layer
+   - Repository layer
+   - Security components
+
+2. **Integration Tests**
+   - API endpoints
+   - Database operations
+   - Authentication flows
+
+3. **Performance Tests**
+   - Load testing
+   - Stress testing
+   - Endurance testing
+
+### Security Enhancements
+1. **Planned Features**
+   - Rate limiting
+   - IP whitelisting
+   - OAuth2 integration
+   - Role-based access control (RBAC)
+   - API key management
