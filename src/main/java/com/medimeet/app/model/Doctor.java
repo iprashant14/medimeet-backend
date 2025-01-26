@@ -14,9 +14,18 @@ import java.util.List;
 @Getter
 @Document(collection = "doctors")
 public class Doctor {
-	@Id
-	private String id;
-	private String name;
-	private String specialty;
-	private List<LocalDateTime> availableSlots;
+    @Id
+    private String id;
+    private String name;
+    private String specialty;
+    private List<LocalDateTime> availableSlots;
+
+    public Doctor() {
+    }
+
+    public Doctor(String id, String name, String specialty) {
+        this.id = id;
+        this.name = name;
+        this.specialty = specialty;
+    }
 }

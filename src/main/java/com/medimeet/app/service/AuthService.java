@@ -42,6 +42,11 @@ public class AuthService {
             throw new RuntimeException("Username already exists");
         }
 
+        if (userRepository.existsByEmail(signupRequest.getEmail())) {
+            logger.warn("Email {} is already registered", signupRequest.getEmail());
+            throw new RuntimeException("Email already exists");
+        }
+
         User user = new User();
         user.setUsername(signupRequest.getUsername());
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
@@ -67,18 +72,18 @@ public class AuthService {
     }
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
-        logger.info("Processing login request for user: {}", loginRequest.getUsername());
+        logger.info("Processing login request for user with email: {}", loginRequest.getEmail());
         
         try {
+            User user = userRepository.findByEmail(loginRequest.getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
+                            user.getUsername(),  // Still use username for Spring Security
                             loginRequest.getPassword()
                     )
             );
-
-            User user = userRepository.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -89,7 +94,7 @@ public class AuthService {
 
             return new AuthResponse(user.getId(), accessToken, refreshToken);
         } catch (Exception e) {
-            logger.error("Authentication failed for user: {}", loginRequest.getUsername(), e);
+            logger.error("Authentication failed for user with email: {}", loginRequest.getEmail(), e);
             throw new RuntimeException("Invalid email or password");
         }
     }

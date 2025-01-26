@@ -58,7 +58,9 @@ public class SecurityConfig {
                 })
                 .authorizeHttpRequests(auth -> {
                     logger.debug("Configuring HTTP request authorization");
-                    auth.requestMatchers("/api/auth/**").permitAll()
+                    auth.requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/appointments", "/api/appointments/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/doctors/**").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated();
                 })
@@ -70,11 +72,35 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         logger.info("Configuring CORS configuration source");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5000", "http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", 
-            "Access-Control-Request-Method", "Access-Control-Request-Headers", "Access-Control-Allow-Origin"));
-        configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials", "Authorization"));
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:5000", 
+            "http://localhost:3000",
+            "http://localhost:8080",
+            "http://localhost:57979",  // Flutter's default debug port
+            "http://localhost:*"       // Allow any localhost port for development
+        ));
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
+        ));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "Accept", 
+            "Origin",
+            "X-Requested-With",
+            "Access-Control-Request-Method", 
+            "Access-Control-Request-Headers", 
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials",
+            "Access-Control-Allow-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+            "Access-Control-Allow-Origin", 
+            "Access-Control-Allow-Credentials",
+            "Access-Control-Allow-Headers", 
+            "Authorization",
+            "Content-Disposition"
+        ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

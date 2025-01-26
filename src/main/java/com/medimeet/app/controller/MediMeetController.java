@@ -5,8 +5,6 @@ import com.medimeet.app.dto.AuthResponse;
 import com.medimeet.app.dto.LoginRequest;
 import com.medimeet.app.dto.SignupRequest;
 import com.medimeet.app.model.Appointment;
-import com.medimeet.app.model.Doctor;
-import com.medimeet.app.repository.DoctorRepository;
 import com.medimeet.app.service.AppointmentService;
 import com.medimeet.app.service.AuthService;
 import jakarta.validation.Valid;
@@ -29,9 +27,6 @@ public class MediMeetController {
     @Autowired
     private AppointmentService appointmentService;
 
-    @Autowired
-    private DoctorRepository doctorRepository;
-
     @PostMapping("/auth/signup")
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest signupRequest) {
         logger.info("Received signup request for user: {}", signupRequest.getEmail());
@@ -42,18 +37,10 @@ public class MediMeetController {
 
     @PostMapping("/auth/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        logger.info("Received login request for user: {}", loginRequest.getUsername());
+        logger.info("Received login request for user with email: {}", loginRequest.getEmail());
         AuthResponse response = authService.authenticateUser(loginRequest);
-        logger.info("Successfully authenticated user: {}", loginRequest.getUsername());
+        logger.info("Successfully authenticated user with email: {}", loginRequest.getEmail());
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/doctors")
-    public ResponseEntity<List<Doctor>> getDoctors() {
-        logger.info("Fetching all doctors");
-        List<Doctor> doctors = doctorRepository.findAll();
-        logger.debug("Found {} doctors", doctors.size());
-        return ResponseEntity.ok(doctors);
     }
 
     @PostMapping("/appointments")

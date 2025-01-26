@@ -17,6 +17,8 @@ public class Appointment {
 	private String id;
 	private String userId;
 	private String doctorId;
+	private String doctorName;
+	private String doctorSpecialty;
 	private LocalDateTime appointmentTime;
 
 	private AppointmentStatus status; // No @Enumerated annotation
@@ -25,4 +27,3 @@ public class Appointment {
 		SCHEDULED, CANCELED, COMPLETED
 	}
 }
-
