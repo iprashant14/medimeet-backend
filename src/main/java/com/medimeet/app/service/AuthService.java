@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.Collections;
 
 @Service
@@ -39,60 +40,79 @@ public class AuthService {
         
         if (userRepository.existsByUsername(signupRequest.getUsername())) {
             logger.warn("Username {} is already registered", signupRequest.getUsername());
-            throw new RuntimeException("Username already exists");
+            throw new RuntimeException("This username is already taken. Please choose a different username.");
         }
 
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             logger.warn("Email {} is already registered", signupRequest.getEmail());
-            throw new RuntimeException("Email already exists");
+            throw new RuntimeException("An account with this email already exists. Please use a different email or try logging in.");
         }
 
+        // Store the raw password for authentication after save
+        String rawPassword = signupRequest.getPassword();
+        
         User user = new User();
         user.setUsername(signupRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
         user.setEmail(signupRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(rawPassword));
 
         User savedUser = userRepository.save(user);
-        logger.info("Successfully created new user with ID: {}", savedUser.getId());
+        logger.info("User registered successfully with ID: {}", savedUser.getId());
 
-        Authentication authentication = authenticationManager.authenticate(
+        try {
+            // Create authentication token with raw password
+            Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        savedUser.getUsername(),
-                        signupRequest.getPassword()
+                    signupRequest.getEmail(),  // Use email for authentication
+                    rawPassword  // Use raw password for authentication
                 )
-        );
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        String accessToken = tokenProvider.generateAccessToken(authentication);
-        String refreshToken = tokenProvider.generateRefreshToken(authentication);
-        logger.debug("Generated authentication token for user: {}", savedUser.getId());
-
-        return new AuthResponse(savedUser.getId(), accessToken, refreshToken);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateAccessToken(authentication);
+            String refreshToken = tokenProvider.generateRefreshToken(authentication);
+            
+            logger.info("Successfully authenticated new user: {}", savedUser.getId());
+            
+            return new AuthResponse(
+                savedUser.getId().toString(),
+                jwt,
+                refreshToken,
+                savedUser.getUsername()
+            );
+        } catch (Exception e) {
+            logger.error("Failed to authenticate user after signup: {}", e.getMessage());
+            throw new RuntimeException("Account created but failed to auto-login. Please try logging in manually.");
+        }
     }
 
     public AuthResponse authenticateUser(LoginRequest loginRequest) {
         logger.info("Processing login request for user with email: {}", loginRequest.getEmail());
         
         try {
-            User user = userRepository.findByEmail(loginRequest.getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            user.getUsername(),  // Still use username for Spring Security
-                            loginRequest.getPassword()
-                    )
+                new UsernamePasswordAuthenticationToken(
+                    loginRequest.getEmail(),  // Use email for authentication
+                    loginRequest.getPassword()
+                )
             );
             
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
             String accessToken = tokenProvider.generateAccessToken(authentication);
             String refreshToken = tokenProvider.generateRefreshToken(authentication);
+            
+            User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
             logger.info("Successfully authenticated user: {}", user.getId());
             logger.debug("Generated authentication token for user: {}", user.getId());
 
-            return new AuthResponse(user.getId(), accessToken, refreshToken);
+            return new AuthResponse(
+                user.getId().toString(),
+                accessToken,
+                refreshToken,
+                user.getUsername()
+            );
         } catch (Exception e) {
             logger.error("Authentication failed for user with email: {}", loginRequest.getEmail(), e);
             throw new RuntimeException("Invalid email or password");
@@ -119,7 +139,7 @@ public class AuthService {
         String newRefreshToken = tokenProvider.generateRefreshToken(authentication);
         logger.debug("Generated new authentication token for user: {}", user.getId());
 
-        return new AuthResponse(user.getId(), newAccessToken, newRefreshToken);
+        return new AuthResponse(user.getId(), newAccessToken, newRefreshToken, user.getUsername());
     }
 
     public boolean validateToken(String token) {

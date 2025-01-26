@@ -5,12 +5,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 
 public class UserPrincipalMapper {
-	public static UserPrincipal build(User user) {
-		return new UserPrincipal(
-				user.getId(),
-				user.getUsername(),
-				user.getPassword(),
-				Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")) // Add roles/authorities if required
-		);
-	}
+    public static UserPrincipal build(User user) {
+        return new UserPrincipal(
+            user.getId(),
+            user.getEmail(),  // Use email as the principal username
+            user.getPassword(),
+            Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+    }
 }
